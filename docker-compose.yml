@@ -1,0 +1,64 @@
+version: "2"
+services:
+    mongo:
+        build: ./mongo/mongo3.6
+        restart: unless-stopped
+        ports:
+            - "27017:27017"
+        container_name: cservice-mongo-1
+        environment:
+            TZ: Asia/Shanghai
+            MONGO_INITDB_ROOT_USERNAME: admin
+            MONGO_INITDB_ROOT_PASSWORD: admin@123456
+        volumes:
+            - ./data/mongo/:/data/db
+            - /etc/localtime:/etc/localtime
+    zool:
+        #image: tg10020607/zookeeper
+        build: ./zookeeper/zookeeper3.4
+        restart: unless-stopped
+        hostname: zool
+        ports:
+            - "2181:2181"
+        container_name: cservice-zookeeper-1
+
+    kafka:
+        #image: tg10020607/kafka
+        build: ./kafka/kafka2.4
+        ports:
+            - "9092:9092"
+        environment:
+            KAFKA_ADVERTISED_HOST_NAME: localhost
+            KAFKA_ZOOKEEPER_CONNECT: "zool:2181"
+            KAFKA_BROKER_ID: 1
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_CREATE_TOPICS: "stream-in:1:1,stream-out:1:1"
+        depends_on:
+            - zool
+        container_name: cservice-kafka-1
+
+    mysql:
+        #image: tg10020617/mysql
+        build: ./mysql/mysql5.6
+        ports:
+            - "3306:3306"
+        volumes:
+            - ./data/mysql:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: "123456"
+            MYSQL_DATABASE: "test"
+            #MYSQL_USER: "root"         #存在root用户
+            MYSQL_PASSWORD: "123456"
+        container_name: cservice-mysql-1
+
+    redis:
+        build: ./redis/redis5.0
+        #image: tg10020607/redis
+        command: redis-server --requirepass 123456
+        ports:
+            - "6378:6379"
+        volumes:
+            - ./data/redis:/data
+            - ./data/redis/redis.conf:/usr/local/etc/redis/redis.conf
+        container_name: cservice-redis-1
+
